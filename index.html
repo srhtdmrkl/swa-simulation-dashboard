@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWA Simulation Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Controls -->
+        <aside class="sidebar glass-panel">
+            <header class="sidebar-header">
+                <h1>SWA Simulator</h1>
+                <p>Toggle operational policies and observe worker behavior.</p>
+            </header>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="policy-active" class="control-label">
+                        <span>SWA Policy Active?</span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="policy-active" checked>
+                            <span class="slider round"></span>
+                        </div>
+                    </label>
+                    <p class="control-hint">Is there a written SWA policy?</p>
+                </div>
+
+                <div class="control-group">
+                    <label for="piece-rate">Piece-Rate Bonus (+)</label>
+                    <div class="range-container">
+                        <input type="range" id="piece-rate" min="0" max="50" value="10">
+                        <span class="value-display" id="piece-rate-val">10</span>
+                    </div>
+                    <p class="control-hint">Financial value tied to uninterrupted production.</p>
+                </div>
+
+                <div class="control-group">
+                    <label for="supervisor-kpi">Supervisor Safety KPI (+)</label>
+                    <div class="range-container">
+                        <input type="range" id="supervisor-kpi" min="0" max="100" value="0">
+                        <span class="value-display" id="supervisor-kpi-val">0</span>
+                    </div>
+                    <p class="control-hint">Supervisor reward for leading indicators (like SWA).</p>
+                </div>
+
+                <div class="control-group">
+                    <label for="peer-pressure">Peer Culture Weight (+)</label>
+                    <div class="range-container">
+                        <input type="range" id="peer-pressure" min="0" max="1" step="0.1" value="0.5">
+                        <span class="value-display" id="peer-pressure-val">0.5</span>
+                    </div>
+                    <p class="control-hint">Multiplier for peer approval for speed (0.0 to 1.0).</p>
+                </div>
+
+                <div class="control-group">
+                    <label for="discount-factor">Risk Blindness (γ)</label>
+                    <div class="range-container">
+                        <input type="range" id="discount-factor" min="0" max="1" step="0.1" value="0.2">
+                        <span class="value-display" id="discount-factor-val">0.2</span>
+                    </div>
+                    <p class="control-hint">How much workers ignore abstract future injury risks (0=Blind to risk,
+                        1=Fully Rational).</p>
+                </div>
+
+                <div class="control-group">
+                    <label for="false-alarm-penalty">False Alarm Penalty (-)</label>
+                    <div class="range-container">
+                        <input type="range" id="false-alarm-penalty" min="0" max="100" value="50">
+                        <span class="value-display" id="false-alarm-penalty-val">50</span>
+                    </div>
+                    <p class="control-hint">Maximum Social/Administrative punishment for a false stop.</p>
+                </div>
+
+                <div class="control-group">
+                    <label for="social-capital">Worker Social Capital</label>
+                    <div class="range-container">
+                        <input type="range" id="social-capital" min="0" max="1" step="0.1" value="0.2">
+                        <span class="value-display" id="social-capital-val">0.2</span>
+                    </div>
+                    <p class="control-hint">Tenure & Peer Respect (0=New Hire, 1=Veteran). Dampens false alarm
+                        penalties.</p>
+                </div>
+
+                <div class="control-group">
+                    <label for="loss-aversion">Loss Aversion (λ)</label>
+                    <div class="range-container">
+                        <input type="range" id="loss-aversion" min="1" max="5" step="0.25" value="2.25">
+                        <span class="value-display" id="loss-aversion-val">2.25</span>
+                    </div>
+                    <p class="control-hint">Prospect Theory multiplier. Humans feel losses (penalties) harder than
+                        gains.</p>
+                </div>
+
+                <div class="control-group">
+                    <label for="p-accident">Base P(Accident | Hazard)</label>
+                    <div class="range-container">
+                        <input type="range" id="p-accident" min="0.01" max="1" step="0.01" value="0.10">
+                        <span class="value-display" id="p-accident-val">0.10</span>
+                    </div>
+                    <p class="control-hint">If a hazard exists, what is the chance of actual injury today?</p>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <!-- Select environmental state -->
+                <div class="state-selector">
+                    <label>Current Environment State:</label>
+                    <select id="environment-state" class="glass-select">
+                        <option value="S0">S0: Normal Operations [P(Hazard)=0.01]</option>
+                        <option value="S1" selected>S1: Ambiguous Anomaly [P(Hazard)=0.50]</option>
+                        <option value="S2">S2: Imminent Danger [P(Hazard)=0.95]</option>
+                    </select>
+                </div>
+                <button id="run-simulation" class="btn primary-btn">Simulate Worker Decision</button>
+            </div>
+        </aside>
+
+        <!-- Main Display -->
+        <main class="main-content">
+            <header class="main-header glass-panel">
+                <div class="header-titles">
+                    <h2>Decision Drivers</h2>
+                    <p class="subtitle">Real-time Psychological Variables</p>
+                </div>
+                <div style="display: flex; gap: 16px; align-items: center;">
+                    <button class="btn icon-btn" id="about-btn" title="About this Simulator"
+                        style="width: auto; padding: 0 16px; font-size: 0.9rem; background: rgba(47, 129, 247, 0.2); color: var(--text-primary); border-color: rgba(47, 129, 247, 0.4);">
+                        ℹ️ About This Simulator
+                    </button>
+                    <div class="status-indicator" id="system-status">
+                        <span class="pulse warning" id="status-pulse"></span>
+                        <span id="status-text">State: S1 (Ambiguous)</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="metrics-grid">
+                <!-- Value Breakdowns -->
+                <div class="metric-card glass-panel" id="card-continue">
+                    <div class="card-header">
+                        <h3>Value of Working</h3>
+                        <span class="icon">⚙️</span>
+                    </div>
+                    <div class="value highlight-positive" id="q-continue">0</div>
+                    <p class="subtitle">Why they keep the line moving</p>
+                    <div class="formula-breakdown" id="q-continue-breakdown">
+                        <span>Production: +10</span>
+                        <span>Peer Speed: +5</span>
+                        <span>Discounted Risk: -10</span>
+                    </div>
+                </div>
+
+                <div class="metric-card glass-panel" id="card-stop">
+                    <div class="card-header">
+                        <h3>Value of Stopping</h3>
+                        <span class="icon">🛑</span>
+                    </div>
+                    <div class="value highlight-negative" id="q-stop">0</div>
+                    <p class="subtitle">Why they might pull the cord</p>
+                    <div class="formula-breakdown" id="q-stop-breakdown">
+                        <span>Hazard Avoided: +5</span>
+                        <span>Supervisor & Peer Penalty: -30</span>
+                        <span>False Alarm Risk: -25</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-display glass-panel">
+                <h3>Worker Decision Output (Softmax Probability)</h3>
+                <!-- Probability Bar Visualization -->
+                <div class="prob-bar-container"
+                    style="display: flex; height: 30px; border-radius: 8px; overflow: hidden; margin-top: 12px; margin-bottom: 12px; border: 1px solid var(--panel-border);">
+                    <div id="prob-bar-continue"
+                        style="width: 50%; background: var(--positive); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 0.9rem; transition: width 0.3s ease;">
+                        50%</div>
+                    <div id="prob-bar-stop"
+                        style="width: 50%; background: var(--negative); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 0.9rem; transition: width 0.3s ease;">
+                        50%</div>
+                </div>
+                <div class="action-result" id="worker-action">
+                    <span class="placeholder-text">Evaluating behavior...</span>
+                </div>
+            </div>
+
+            <div class="log-container glass-panel">
+                <div class="log-header">
+                    <h3>Event Log</h3>
+                    <button id="clear-log" class="btn icon-btn" title="Clear Log">🧹</button>
+                </div>
+                <ul id="simulation-log" class="custom-scrollbar">
+                    <li class="log-entry system">Environment initialized. Waiting for input...</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+
+    <!-- About Modal containing README -->
+    <div id="about-modal" class="modal-overlay">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2 style="font-size: 1.5rem;">📖 About this Simulator</h2>
+                <button id="close-modal" class="btn icon-btn">✕</button>
+            </div>
+            <div class="modal-body custom-scrollbar">
+                <h3 style="margin-bottom: 24px; color: var(--text-secondary); font-weight: 400;">An interactive,
+                    Reinforcement Learning (RL) and Behavioral Economics dashboard designed to model Stop Work Authority
+                    (SWA) decision-making in industrial environments.</h3>
+
+                <h4>Overview</h4>
+                <p>This application models why workers frequently choose <em>not</em> to use their Stop Work Authority,
+                    even when explicitly told they are allowed to. Rather than treating human workers as strictly
+                    rational actors calculating objective risk, the simulation engine calculates the <strong>Perceived
+                        Value of Working</strong> vs. <strong>The Perceived Value of Stopping</strong>.</p>
+
+                <p>The mathematical engine driving the dashboard utilizes models established by Kahneman & Tversky
+                    (Prospect Theory), Hyperbolic Discounting, and Stochastic Softmax action selection.</p>
+
+                <h4>Behavioral Mechanics</h4>
+                <p>The underlying JavaScript engine features several academic concepts:</p>
+                <ol style="margin-top: 12px; margin-bottom: 24px; padding-left: 20px;">
+                    <li style="margin-bottom: 12px;"><strong>Decoupled Probabilities</strong>: Factoring the probability
+                        of a hazard separately from the probability of a fatal accident.</li>
+                    <li style="margin-bottom: 12px;"><strong>Temporal Risk Discounting (γ)</strong>: Modeling how the
+                        human brain discounts abstract, future injury risk compared to immediate financial incentives
+                        like piece-rate bonuses.</li>
+                    <li style="margin-bottom: 12px;"><strong>Loss Aversion (λ)</strong>: Utilizing Prospect Theory,
+                        negative penalties (such as Supervisory wrath or False Alarms) are mathematically weighted
+                        drastically heavier than equivalent positive gains.</li>
+                    <li style="margin-bottom: 12px;"><strong>Social Capital Buffer</strong>: An algorithmic dampener
+                        giving veteran workers structural immunity to the social penalty of a False Alarm, while making
+                        the same penalty devastating for new hires.</li>
+                    <li style="margin-bottom: 12px;"><strong>Softmax Action Selection</strong>: Workers exhibit a
+                        stochastic probability distribution of behavior based on temperature-scaled differences in
+                        Q-values, modeling the sheer unpredictability of human action.</li>
+                </ol>
+
+                <h4>Usage</h4>
+                <p>This simulation requires no build tools or servers. The variables are entirely controlled by the user
+                    via the left sidebar, which recalculates expected values and logic dynamically via Javascript.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
